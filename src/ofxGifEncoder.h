@@ -14,11 +14,11 @@
 
 // similar to ofPixels
 typedef struct {
-	unsigned char * pixels;
+    unsigned char * pixels;
     int width;
     int height;
     float duration;  // seconds
-	int bitsPerPixel;
+    int bitsPerPixel;
 } ofxGifFrame;
 
 // done for consistency. feel free to use Freeimage versions
@@ -35,46 +35,55 @@ enum ditherTypes {
 
 // make an ofxGifThreadedSaver?
 class ofxGifEncoder: public ofThread {
-    public:     
-        
-        ofxGifEncoder();
-        ~ofxGifEncoder();
+public:
     
-        void setup(int _w, int _h, float _frameDuration = 0.1f, int _nColors = 256 );
-        void setNumColors(int _nColors = 256);
-        void setDitherMode(int _ditherMode = OFX_GIF_DITHER_FS);
-        void setFrameDuration(float _duration); // for all gifs;
-        
-        static ofEvent<string>	OFX_GIF_SAVE_FINISHED;
-
-        // thread saving
-        // blocking, verbose
-        void start() {startThread(true, false);}
-        void stop() {stopThread();}
-        void exit();
-		void reset();
-        
-        // if no duration is specified, we'll use default (from setup())
-        void addFrame(ofImage & image, float duration = 0.f);        
-        void addFrame(unsigned char * px, int _w, int _h, int _bitsPerPixel = 24, float duration = 0.f);
-
-        static ofxGifFrame * createGifFrame(unsigned char * px, int _w, int _h, int _bitsPerPixel = 24, float duration = 0.1f);
-        void save(string _fileName = "test.gif" );
-    private:   
-        void swapRgb(ofxGifFrame * pix);
-        void threadedFunction();
-        void doSave();
-        bool bSaving;
-
-        vector <ofxGifFrame *> frames;
-        string  fileName;
-        int     nColors;
-        float   frameDuration;
-        int w;
-        int h;
-        int bitsPerPixel;
-        int nChannels;
-        int ditherMode;
+    ofxGifEncoder();
+    ~ofxGifEncoder();
+    
+    void setup(int _w, int _h, float _frameDuration = 0.1f, int _nColors = 256 );
+    void setNumColors(int _nColors = 256);
+    void setDitherMode(int _ditherMode = OFX_GIF_DITHER_FS);
+    void setFrameDuration(float _duration); // for all gifs;
+    
+    static ofEvent<string>	OFX_GIF_SAVE_FINISHED;
+    
+    // thread saving
+    // blocking, verbose
+    void start() {startThread(true, false);}
+    void stop() {stopThread();}
+    void exit();
+    void reset();
+    
+    // if no duration is specified, we'll use default (from setup())
+    void addFrame(ofImage & image, float duration = 0.f);
+    void addFrame(unsigned char * px, int _w, int _h, int _bitsPerPixel = 24, float duration = 0.f);
+    
+    static ofxGifFrame * createGifFrame(unsigned char * px, int _w, int _h, int _bitsPerPixel = 24, float duration = 0.1f);
+    void save(string _fileName = "test.gif" );
+    
+    // add sequencial recording function
+    bool isRecording = false;
+    ofImage capturedImage;
+    void update();
+    void startRecording();
+    void stopRecording();
+    void toggleRecording();
+    
+private:
+    void swapRgb(ofxGifFrame * pix);
+    void threadedFunction();
+    void doSave();
+    bool bSaving;
+    
+    vector <ofxGifFrame *> frames;
+    string  fileName;
+    int     nColors;
+    float   frameDuration;
+    int w;
+    int h;
+    int bitsPerPixel;
+    int nChannels;
+    int ditherMode;
     
     
 };

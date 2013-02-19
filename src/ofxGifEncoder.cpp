@@ -38,7 +38,7 @@ ofxGifEncoder::~ofxGifEncoder() {}
 ofxGifFrame * ofxGifEncoder::createGifFrame(unsigned char * px, int _w, int _h, int _bitsPerPixel, float _duration ) {
     ofxGifFrame * gf    = new ofxGifFrame();
     gf->pixels          = px;
-    gf->width           = _w; 
+    gf->width           = _w;
     gf->height          = _h;
     gf->duration        = _duration;
     gf->bitsPerPixel    = _bitsPerPixel;
@@ -46,7 +46,7 @@ ofxGifFrame * ofxGifEncoder::createGifFrame(unsigned char * px, int _w, int _h, 
 }
 
 void ofxGifEncoder::addFrame(ofImage & img, float _duration) {
-
+    
     if(img.width != w || img.height != h) {
         ofLog(OF_LOG_WARNING, "ofxGifEncoder::addFrame image dimensions don't match, skipping frame");
         return;
@@ -62,14 +62,14 @@ void ofxGifEncoder::addFrame(unsigned char *px, int _w, int _h, int _bitsPerPixe
     }
     
     float tempDuration = _duration;
-    if (tempDuration == 0.f) tempDuration = frameDuration; 
+    if (tempDuration == 0.f) tempDuration = frameDuration;
     
     nChannels = 0;
     switch (_bitsPerPixel) {
         case 8:     nChannels = 1;      break;
         case 24:    nChannels = 3;      break;
         case 32:    nChannels = 4;      break;
-        default:             
+        default:
             ofLog(OF_LOG_WARNING, "bitsPerPixel should be 8, 24 or 32. skipping frame");
             return;
             break;
@@ -111,41 +111,41 @@ void ofxGifEncoder::save (string _fileName) {
 
 //--------------------------------------------------------------
 void ofxGifEncoder::threadedFunction() {
-	while( isThreadRunning() != 0 ) {
-		if( lock() ){
+    while( isThreadRunning() != 0 ) {
+        if( lock() ){
             
             if(bSaving) {
                 doSave();
                 bSaving = false;
                 ofNotifyEvent(OFX_GIF_SAVE_FINISHED, fileName, this);
             }
-
-			unlock();
-			ofSleepMillis(10);
-		}
-	}
+            
+            unlock();
+            ofSleepMillis(10);
+        }
+    }
 }
 
 void ofxGifEncoder::doSave() {
-	// create a multipage bitmap
-	FIMULTIBITMAP *multi = FreeImage_OpenMultiBitmap(FIF_GIF, ofToDataPath(fileName).c_str(), TRUE, FALSE); 
-	
-	
-	for(int i = 0; i < frames.size(); i++ ) { 
+    // create a multipage bitmap
+    FIMULTIBITMAP *multi = FreeImage_OpenMultiBitmap(FIF_GIF, ofToDataPath(fileName).c_str(), TRUE, FALSE);
+    
+    
+    for(int i = 0; i < frames.size(); i++ ) {
         FIBITMAP * bmp = NULL;
-		// we need to swap the channels if we're on little endian (see ofImage::swapRgb);
+        // we need to swap the channels if we're on little endian (see ofImage::swapRgb);
 #ifdef TARGET_LITTLE_ENDIAN
         swapRgb(frames[i]);
 #endif
-		// get the pixel data
-		bmp	= FreeImage_ConvertFromRawBits(
-            frames[i]->pixels, 
-            frames[i]->width,
-            frames[i]->height, 
-            frames[i]->width*(frames[i]->bitsPerPixel/8), 
-            frames[i]->bitsPerPixel, 
-            0, 0, 0, true // in of006 this (topdown) had to be false.
-        );	 
+        // get the pixel data
+        bmp	= FreeImage_ConvertFromRawBits(
+                                           frames[i]->pixels,
+                                           frames[i]->width,
+                                           frames[i]->height,
+                                           frames[i]->width*(frames[i]->bitsPerPixel/8),
+                                           frames[i]->bitsPerPixel,
+                                           0, 0, 0, true // in of006 this (topdown) had to be false.
+                                           );
         
 #ifdef TARGET_LITTLE_ENDIAN
         swapRgb(frames[i]);
@@ -159,30 +159,30 @@ void ofxGifEncoder::doSave() {
         quantizedBmp = FreeImage_ColorQuantizeEx(bmp, FIQ_NNQUANT, nColors);
         processedBmp = quantizedBmp;
         
-		// dithering :)
+        // dithering :)
         if(ditherMode > OFX_GIF_DITHER_NONE) {
             ditheredBmp = FreeImage_Dither(processedBmp, (FREE_IMAGE_DITHER)ditherMode);
             processedBmp = ditheredBmp;
-        } 
+        }
         
         DWORD frameDuration = (DWORD) (frames[i]->duration * 1000.f);
         
-		// clear any animation metadata used by this dib as we’ll adding our own ones         
-		FreeImage_SetMetadata(FIMD_ANIMATION, processedBmp, NULL, NULL); 
-		// add animation tags to dib[i] 
-		FITAG *tag = FreeImage_CreateTag(); 
-		if(tag) { 
-			FreeImage_SetTagKey(tag, "FrameTime"); 
-			FreeImage_SetTagType(tag, FIDT_LONG); 
-			FreeImage_SetTagCount(tag, 1); 
-			FreeImage_SetTagLength(tag, 4); 
-			FreeImage_SetTagValue(tag, &frameDuration); 
-			FreeImage_SetMetadata(FIMD_ANIMATION, processedBmp, FreeImage_GetTagKey(tag), tag); 
-			FreeImage_DeleteTag(tag); 
-		} 
+        // clear any animation metadata used by this dib as we‚Äôll adding our own ones
+        FreeImage_SetMetadata(FIMD_ANIMATION, processedBmp, NULL, NULL);
+        // add animation tags to dib[i]
+        FITAG *tag = FreeImage_CreateTag();
+        if(tag) {
+            FreeImage_SetTagKey(tag, "FrameTime");
+            FreeImage_SetTagType(tag, FIDT_LONG);
+            FreeImage_SetTagCount(tag, 1);
+            FreeImage_SetTagLength(tag, 4);
+            FreeImage_SetTagValue(tag, &frameDuration);
+            FreeImage_SetMetadata(FIMD_ANIMATION, processedBmp, FreeImage_GetTagKey(tag), tag);
+            FreeImage_DeleteTag(tag);
+        }
         
-		FreeImage_AppendPage(multi, processedBmp); 
-                
+        FreeImage_AppendPage(multi, processedBmp);
+        
         // clear freeimage stuff
         if(bmp          != NULL) FreeImage_Unload(bmp);
         if(quantizedBmp != NULL) FreeImage_Unload(quantizedBmp);
@@ -190,26 +190,26 @@ void ofxGifEncoder::doSave() {
         
         // no need to unload processedBmp, as it points to either of the above
     } 
-	FreeImage_CloseMultiBitmap(multi); 
+    FreeImage_CloseMultiBitmap(multi); 
     
 }
- 
+
 // from ofimage
 //----------------------------------------------------
 void ofxGifEncoder::swapRgb(ofxGifFrame * pix){
-	if (pix->bitsPerPixel != 8){
-		int sizePixels		= pix->width * pix->height;
-		int cnt				= 0;
-		unsigned char temp;
-		int byteCount		= pix->bitsPerPixel/8;
+    if (pix->bitsPerPixel != 8){
+        int sizePixels		= pix->width * pix->height;
+        int cnt				= 0;
+        unsigned char temp;
+        int byteCount		= pix->bitsPerPixel/8;
         
-		while (cnt < sizePixels){
-			temp                            = pix->pixels[cnt*byteCount];
-			pix->pixels[cnt*byteCount]		= pix->pixels[cnt*byteCount+2];
-			pix->pixels[cnt*byteCount+2]	= temp;
-			cnt++;
-		}
-	}
+        while (cnt < sizePixels){
+            temp                            = pix->pixels[cnt*byteCount];
+            pix->pixels[cnt*byteCount]		= pix->pixels[cnt*byteCount+2];
+            pix->pixels[cnt*byteCount+2]	= temp;
+            cnt++;
+        }
+    }
 }
 
 void ofxGifEncoder::exit() {
@@ -228,4 +228,27 @@ void ofxGifEncoder::reset() {
     frames.clear();
 }
 
+// Sequencial recording function
+//----------------------------------------------------
+
+void ofxGifEncoder::startRecording(){
+    cout << "GifEncoder recording start" << endl;
+    isRecording = true;
+}
+
+void ofxGifEncoder::stopRecording(){
+    cout << "GifEncoder recording stop" << endl;
+    isRecording = false;
+}
+
+void ofxGifEncoder::toggleRecording(){
+    isRecording? stopRecording() : startRecording();
+}
+
+void ofxGifEncoder::update(){
+    if (isRecording) {
+        capturedImage.grabScreen(0, 0, w, h);
+        addFrame(capturedImage.getPixels(), w, h);
+    }
+}
 
